@@ -6,9 +6,11 @@
 import scrapy
 
 class MyItem(scrapy.Item):
-    pages=scrapy.Field()
-    region=scrapy.Field()
-    houseName=scrapy.Field()
-    housePrices=scrapy.Field()
-    houseArea=scrapy.Field()
-    houseUnitprice=scrapy.Field()
+    name=scrapy.Field()
+    location_1=scrapy.Field()
+    location_2=scrapy.Field()
+    location_3=scrapy.Field()
+    area=scrapy.Field()
+    kind=scrapy.Field()
+    unitprice=scrapy.Field()
+    allprice=scrapy.Field()

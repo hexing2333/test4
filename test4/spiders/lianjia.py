@@ -3,27 +3,40 @@ import json
 from test4.items import MyItem
 class lianjia(scrapy.spiders.Spider):
     name = "lianjia"
-    allowed_domains=["bj.lianjia.com"]
-    start_urls=["https://bj.lianjia.com/ershoufang/dongcheng/pg1"]
-    url="https://bj.lianjia.com/ershoufang/{city}/pg{page_num}"
+    allowed_domains=["bj.fang.lianjia.com"]
+    start_urls=["https://bj.fang.lianjia.com/loupan/pg1/"]
+    url="https://bj.fang.lianjia.com/loupan/pg{page_num}/"
     page_num=1
-    city_num=0
-    city=['dongcheng','xicheng','chaoyang','haidian']
     def parse(self,response):
         item=MyItem()
-        for each in response.xpath('//div[@class="info clear"]'):
-            item['houseName']=each.xpath('div[@class="title"]/a/text()').extract()[0]
-            item['housePrices']=each.xpath('div[@class="priceInfo"]/div[@class="totalPrice"]/span/text()').extract()[0]+each.xpath('div[@class="priceInfo"]/div[@class="totalPrice"]/text()').extract()[0]
-            item['houseArea']=each.xpath('div[@class="address"]/div[@class="houseInfo"]/text()').extract()[0].split("|")[1]
-            item['houseUnitprice']=each.xpath('div[@class="priceInfo"]/div[@class="unitPrice"]/span/text()').extract()[0]
-            item['region']=self.city[self.city_num]
-            item['pages']=self.page_num
-        #print(response.body.decode())
-            if(item['houseName'] and item['housePrices'] and item['houseArea'] and item['houseUnitprice']):
-                yield(item)
+        for each in response.xpath('//div[@class="resblock-desc-wrapper"]'):
+            price=""
+            price_kind=""
+            if(each.xpath('div[@class="resblock-name"]/a/text()')):
+                item['name']=each.xpath('div[@class="resblock-name"]/a/text()').extract()[0]
+            if(each.xpath('div[@class="resblock-location"]/span[1]/text()')):
+                item['location_1']=each.xpath('div[@class="resblock-location"]/span[1]/text()').extract()[0]
+            if(each.xpath('div[@class="resblock-location"]/span[2]/text()')):
+                item['location_2']=each.xpath('div[@class="resblock-location"]/span[2]/text()').extract()[0]
+            if(each.xpath('div[@class="resblock-location"]/a/text()')):
+                item['location_3']=each.xpath('div[@class="resblock-location"]/a/text()').extract()[0]
+            if(each.xpath('a[@class="resblock-room"]/span[1]/text()')):
+                item['kind']=each.xpath('a[@class="resblock-room"]/span[1]/text()').extract()[0]
+            if(each.xpath('div[@class="resblock-area"]/span/text()')):
+                item['area']=each.xpath('div[@class="resblock-area"]/span/text()').extract()[0]
+            if(each.xpath('div[@class="resblock-price"]/div[@class="main-price"]/span[1]/text()')):
+                price=each.xpath('div[@class="resblock-price"]/div[@class="main-price"]/span[1]/text()').extract()[0]
+            if(each.xpath('div[@class="resblock-price"]/div[@class="main-price"]/span[2]/text()')):
+                price_kind=each.xpath('div[@class="resblock-price"]/div[@class="main-price"]/span[2]/text()').extract()[0]
+                if(price_kind==" 元/㎡(均价)"):
+                    item['unitprice']=price
+                    item['allprice']=""
+                elif(price_kind==" 万/套(总价)"):
+                    item['allprice']=price
+                    item['unitprice']=""
+
+            yield(item)
         self.page_num+=1
-        if(self.page_num==6):
-            self.city_num+=1
-            self.page_num=1
-        new_url = self.url.format(city=self.city[self.city_num], page_num=self.page_num)
-        yield scrapy.Request(url=new_url, callback=self.parse)
+        if(self.page_num<=19):
+            new_url = self.url.format(page_num=self.page_num)
+            yield scrapy.Request(url=new_url, callback=self.parse)
